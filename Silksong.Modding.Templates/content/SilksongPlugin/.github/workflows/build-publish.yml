@@ -49,7 +49,7 @@ jobs:
       uses: actions/upload-artifact@v6
       with:
         name: mod-bundle
-        path: thunderstore/dist
+        path: bin/Publish/*.zip
     - name: Upload nuget artifact
       uses: actions/upload-artifact@v6
       with:
@@ -61,7 +61,7 @@ jobs:
       if: github.event_name == 'push'
       with:
         subject-path: |
-          thunderstore/dist/*.zip
+          bin/Publish/*.zip
           nuget/*.nupkg
 
   # Publish to Thunderstore to that users can install it
@@ -84,24 +84,75 @@ jobs:
 
     steps:
     - uses: actions/checkout@v6
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: 9.x
-    - name: Restore tools
-      run: dotnet tool restore
     - name: Download artifact
       uses: actions/download-artifact@v7
       with:
         name: mod-bundle
-        path: thunderstore/dist
+        path: artifacts
+    - name: Get assembly title name
+      id: name
+      run: |-
+        NAME=$(dotnet build Silksong.Plugin.1.csproj -getProperty:AssemblyTitle)
+        echo Assembly title is $NAME
+        echo "name=$NAME" >> $GITHUB_OUTPUT
+    - name: Get project description
+      id: description
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |-
+        DESCRIPTION=$(gh repo view --json description --jq .description)
+        echo Description is $DESCRIPTION
+        echo "description=$DESCRIPTION" >> $GITHUB_OUTPUT
+    - name: Get project topics
+      id: topics
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |-
+        TOPICS=$(gh repo view --json repositoryTopics --jq \
+          '.repositoryTopics // [] | map(.name) | ["mods"] + . | @csv')
+        echo Topics are $TOPICS
+        echo "topics=$TOPICS" >> $GITHUB_OUTPUT
+    - name: Generate package manifest
+      run: |
+        cat <<'EOF' > thunderstore.toml
+        [config]
+        schemaVersion = "0.0.1"
+
+        [package]
+        namespace = "ThunderstoreUserName"
+        name = "${{ steps.name.outputs.name }}"
+        versionNumber = "${{ needs.build.outputs.version }}"
+        description = "${{ steps.description.outputs.description }}"
+        websiteUrl = "https://github.com/${{ github.repository }}"
+        containsNsfwContent = false
+
+        [package.dependencies]
+        BepInEx-BepInExPack_Silksong = "5.4.2304"
+
+        [build]
+        icon = "assets/icon.png"
+        readme = "README.md"
+        outdir = "build"
+
+        [[build.copy]]
+        source = "dist"
+        target = ""
+
+        [publish]
+        repository = "https://thunderstore.io"
+        communities = ["hollow-knight-silksong"]
+
+        [publish.categories]
+        # available categories can be found at https://github.com/thunderstore-io/ecosystem-schema/blob/master/games/data/hollow-knight-silksong.yml
+        hollow-knight-silksong = [${{steps.topics.outputs.topics}}]
+        EOF
+    - name: Create dist directory
+      run: 7z x artifacts/*.zip -odist
+    - name: Install tcli
+      run: dotnet tool install --global tcli
     - name: Publish to Thunderstore
       if: env.THUNDERSTORE_API_KEY != ''
-      run: |-
-        dotnet tcli publish \
-          --config-path thunderstore/thunderstore.toml \
-          --file thunderstore/dist/*.zip \
-          --token $THUNDERSTORE_API_KEY
+      run: tcli publish --token $THUNDERSTORE_API_KEY
 
   # Publish to NuGet so that other mods can depend on it in CI
   release-nuget:
@@ -151,7 +202,7 @@ jobs:
       uses: actions/download-artifact@v7
       with:
         name: mod-bundle
-        path: thunderstore/dist
+        path: artifacts
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
@@ -162,4 +213,4 @@ jobs:
         body: |
           Build attested at ${{ needs.build.outputs.attestation-url }}
         files: |
-          thunderstore/dist/*.zip
+          artifacts/*.zip

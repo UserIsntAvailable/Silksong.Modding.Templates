@@ -4,6 +4,7 @@
   If you are checking out from git and need to create a new one, you can use `dotnet new silksongpath` to generate one.
   -->
   <Import Condition="Exists('SilksongPath.props')" Project="SilksongPath.props" />
+
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>latest</LangVersion>
@@ -26,6 +27,7 @@
     <PackageIcon>icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/UserName/Silksong.Plugin.1</RepositoryUrl>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />
@@ -53,12 +55,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Remove="thunderstore/temp;thunderstore/dist" />
-    <None Include="README.md" Pack="True" PackagePath="README.md" />
-    <None Include="thunderstore/icon.png" Pack="True" PackagePath="icon.png" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Binaries Include="$(TargetPath)" LocalDir="/" PackDir="/" />
     <Binaries Include="$(TargetDir)/$(TargetName).pdb" LocalDir="/" PackDir="/" />
   </ItemGroup>
@@ -74,22 +70,18 @@
     />
   </Target>
 
-  <Target Name="PackageMod" AfterTargets="PostBuildEvent">
+  <Target
+    Name="PackageMod"
+    AfterTargets="PostBuildEvent"
+    Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'"
+  >
     <PropertyGroup>
-      <ThunderstoreDir>$(ProjectDir)/thunderstore</ThunderstoreDir>
+      <ExportFolder>bin/Publish</ExportFolder>
     </PropertyGroup>
 
-    <RemoveDir Directories="$(ThunderstoreDir)/temp;$(ThunderstoreDir)/dist" />
-    <MakeDir Directories="$(ThunderstoreDir)/temp" />
-    <Copy
-      SourceFiles="@(Binaries)"
-      DestinationFolder="$(ThunderstoreDir)/temp/%(Binaries.PackDir)"
-    />
-    <Exec Command="dotnet tool restore" />
-    <Exec
-      Command="dotnet tcli build --config-path &quot;$(ThunderstoreDir)/thunderstore.toml&quot; --package-name &quot;$(AssemblyTitle)&quot; --package-version $(Version)"
-      StandardOutputImportance="High"
-      StandardErrorImportance="High"
-    />
+    <RemoveDir Directories="$(IntermediateOutputPath)/archive"/>
+    <MakeDir Directories="$(ExportFolder)"/>
+    <Copy SourceFiles="@(Binaries)" DestinationFolder="$(IntermediateOutputPath)/archive"/>
+    <ZipDirectory SourceDirectory="$(IntermediateOutputPath)/archive" DestinationFile="$(ExportFolder)/$(AssemblyTitle).zip" Overwrite="True"/>
   </Target>
 </Project>
