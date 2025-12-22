@@ -2,9 +2,8 @@ name: Build
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       force_thunderstore:
@@ -29,9 +28,6 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       attestation-url: ${{ steps.attest.outputs.attestation-url }}
-      # when you are ready to publish your first release, change this to 'true'
-      allow-release: 'false'
-      is-new-version: ${{ !fromJSON(steps.needs-release.outputs.exists || 'true') }}
 
     steps:
     - uses: actions/checkout@v6
@@ -59,16 +55,10 @@ jobs:
       with:
         name: nuget
         path: nuget/
-    - name: Check if release needed
-      id: needs-release
-      uses: mukunku/tag-exists-action@v1.7.0
-      if: github.event_name == 'push'
-      with:
-        tag: v${{ steps.version.outputs.version }}
     - name: Generate attestation
       id: attest
       uses: actions/attest-build-provenance@v3
-      if: github.event_name == 'push' && steps.needs-release.outputs.exists == 'false'
+      if: github.event_name == 'push'
       with:
         subject-path: |
           thunderstore/dist/*.zip
@@ -81,9 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       (
-        github.event_name == 'push' &&
-        needs.build.outputs.allow-release == 'true' &&
-        needs.build.outputs.is-new-version == 'true'
+        github.event_name == 'push'
       ) ||
       (
         github.event_name == 'workflow_dispatch' &&
@@ -122,9 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       (
-        github.event_name == 'push' && 
-        needs.build.outputs.allow-release == 'true' && 
-        needs.build.outputs.is-new-version == 'true'
+        github.event_name == 'push'
       ) ||
       (
         github.event_name == 'workflow_dispatch' &&
@@ -158,7 +144,7 @@ jobs:
     needs:
       - build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && needs.build.outputs.allow-release == 'true' && needs.build.outputs.is-new-version == 'true'
+    if: github.event_name == 'push'
 
     steps:
     - name: Download artifact
