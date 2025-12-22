@@ -58,23 +58,27 @@
     <None Include="thunderstore/icon.png" Pack="True" PackagePath="icon.png" />
   </ItemGroup>
 
-  <Target Name="CopyAndPackageMod" AfterTargets="PostBuildEvent">
-    <ItemGroup>
-      <Binaries Include="$(TargetPath)" LocalDir="/" PackDir="/" />
-      <Binaries Include="$(TargetDir)/$(TargetName).pdb" LocalDir="/" PackDir="/" />
-    </ItemGroup>
+  <ItemGroup>
+    <Binaries Include="$(TargetPath)" LocalDir="/" PackDir="/" />
+    <Binaries Include="$(TargetDir)/$(TargetName).pdb" LocalDir="/" PackDir="/" />
+  </ItemGroup>
+
+  <Target
+    Name="CopyMod"
+    AfterTargets="PostBuildEvent"
+    Condition="'$(SilksongPluginsFolder)' != '' And Exists('$(SilksongPluginsFolder)')"
+  >
+    <Copy
+      SourceFiles="@(Binaries)"
+      DestinationFolder="$(SilksongPluginsFolder)/ThunderstoreUserName-$(AssemblyTitle)/%(Binaries.LocalDir)"
+    />
+  </Target>
+
+  <Target Name="PackageMod" AfterTargets="PostBuildEvent">
     <PropertyGroup>
       <ThunderstoreDir>$(ProjectDir)/thunderstore</ThunderstoreDir>
     </PropertyGroup>
 
-    <!-- Local install -->
-    <Copy
-      SourceFiles="@(Binaries)"
-      DestinationFolder="$(SilksongPluginsFolder)/ThunderstoreUserName-$(AssemblyTitle)/%(Binaries.LocalDir)"
-      Condition="'$(SilksongPluginsFolder)' != '' And Exists('$(SilksongPluginsFolder)')"
-    />
-
-    <!-- Thunderstore packaging -->
     <RemoveDir Directories="$(ThunderstoreDir)/temp;$(ThunderstoreDir)/dist" />
     <MakeDir Directories="$(ThunderstoreDir)/temp" />
     <Copy
