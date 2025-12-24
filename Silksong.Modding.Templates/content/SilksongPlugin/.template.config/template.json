@@ -221,6 +221,19 @@
       }
     },
     {
+      "description": "Add csharpier to dotnet-tools.json",
+      "actionId": "3A7C4B45-1F5D-4A30-959A-51B88E82B5D2",
+      "manualInstructions": [
+        {
+          "text": "Run `dotnet tool install --create-manifest-if-needed csharpier`"
+        }
+      ],
+      "args": {
+        "executable": "dotnet",
+        "args": "tool install --create-manifest-if-needed csharpier",
+      }
+    },
+    {
       "description": "Restore dependencies",
       "manualInstructions": [
         {
