@@ -161,6 +161,22 @@
       "generator": "constant",
       "parameters": { "value": ".gitignore" },
       "fileRename": ".gitignore.template"
+    },
+    "now-today": {
+      "type": "generated",
+      "generator": "now",
+      "replaces": "NowToday",
+      "parameters": {
+        "format": "yyyy-MM-dd"
+      }
+    },
+    "now-year": {
+      "type": "generated",
+      "generator": "now",
+      "replaces": "NowYear",
+      "parameters": {
+        "format": "yyyy"
+      }
     }
   },
   "forms": {

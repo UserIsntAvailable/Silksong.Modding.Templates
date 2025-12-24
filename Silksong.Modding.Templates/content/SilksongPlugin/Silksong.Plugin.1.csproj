@@ -55,6 +55,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Binaries Include="LICENSE" LocalDir="/" PackDir="/" />
+    <Binaries Include="CHANGELOG.md" LocalDir="/" PackDir="/" />
     <Binaries Include="$(TargetPath)" LocalDir="/" PackDir="/" />
     <Binaries Include="$(TargetDir)/$(TargetName).pdb" LocalDir="/" PackDir="/" />
   </ItemGroup>
