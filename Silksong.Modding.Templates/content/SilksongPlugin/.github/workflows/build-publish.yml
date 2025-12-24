@@ -203,14 +203,22 @@ jobs:
       with:
         name: mod-bundle
         path: artifacts
+    - name: Get changelog entry
+      id: changelog
+      uses: mindsers/changelog-reader-action@v2
+      with:
+        validation_level: warn
+        version: ${{ needs.build.outputs.version }}
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
         draft: false
-        generate_release_notes: true
+        generate_release_notes: false
         fail_on_unmatched_files: true
         tag_name: v${{ needs.build.outputs.version }}
         body: |
+          ${{ steps.changelog.outputs.changes }}
+          ---
           Build attested at ${{ needs.build.outputs.attestation-url }}
         files: |
           artifacts/*.zip
